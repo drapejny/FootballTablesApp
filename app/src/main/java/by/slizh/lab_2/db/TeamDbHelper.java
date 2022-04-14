@@ -12,7 +12,6 @@ public class TeamDbHelper extends SQLiteOpenHelper {
     public static final String DATABASE_NAME = "FootballTables.db";
 
     public static final String TEAMS_TABLE_NAME = "teams";
-    public static final String USERS_TABLE_NAME = "users";
     public static final String FAVORITES_TABLE_NAME = "favorites";
 
     //TEAMS
@@ -32,12 +31,8 @@ public class TeamDbHelper extends SQLiteOpenHelper {
     public static final String GOAL_DIFFERENCE_KEY = "goalDifference";
     public static final String POSITION_KEY = "position";
 
-    //USERS
-    public static final String USER_ID_KEY = "userId";
-    public static final String THEME_KEY = "theme";
-    public static final String FAVORITE_COMPETITION_CODE = "favoriteCompetitionCode";
-
     //FAVORITES
+    public static final String USER_ID_KEY = "userId";
     public static final String FAVORITE_TEAM_ID_KEY = "favoriteTeamId";
 
     private static final String SQL_CREATE_TEAMS_TABLE =
@@ -58,24 +53,15 @@ public class TeamDbHelper extends SQLiteOpenHelper {
                     GOAL_DIFFERENCE_KEY + " INTEGER, " +
                     POSITION_KEY + " INTEGER)";
 
-    private static final String SQL_CREATE_USERS_TABLE =
-            "CREATE TABLE " + USERS_TABLE_NAME + "(" +
-                    USER_ID_KEY + " TEXT PRIMARY KEY, " +
-                    THEME_KEY + " INT, " +
-                    FAVORITE_COMPETITION_CODE + " TEXT)";
-
     private static final String SQL_CREATE_FAVORITES_TABLE =
             "CREATE TABLE " + FAVORITES_TABLE_NAME + "(" +
                     USER_ID_KEY + " TEXT, " +
                     FAVORITE_TEAM_ID_KEY + " INT, " +
                     "PRIMARY KEY (" + USER_ID_KEY + ", " + FAVORITE_TEAM_ID_KEY + "), " +
-                    "FOREIGN KEY(" + USER_ID_KEY + ") REFERENCES " + USERS_TABLE_NAME + "(" + USER_ID_KEY + "), " +
                     "FOREIGN KEY(" + FAVORITE_TEAM_ID_KEY + ") REFERENCES " + TEAMS_TABLE_NAME + "(" + TEAM_ID_KEY + "))";
 
     private static final String SQL_DROP_TEAMS_TABLE =
             "DROP TABLE IF EXISTS " + TEAMS_TABLE_NAME + ";";
-    private static final String SQL_DROP_USERS_TABLE =
-            "DROP TABLE IF EXISTS " + USERS_TABLE_NAME + "; ";
     private static final String SQL_DROP_FAVORITES_TABLE =
             "DROP TABLE IF EXISTS " + FAVORITES_TABLE_NAME + "; ";
 
@@ -86,14 +72,12 @@ public class TeamDbHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
         sqLiteDatabase.execSQL(SQL_CREATE_TEAMS_TABLE);
-        sqLiteDatabase.execSQL(SQL_CREATE_USERS_TABLE);
         sqLiteDatabase.execSQL(SQL_CREATE_FAVORITES_TABLE);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
         sqLiteDatabase.execSQL(SQL_DROP_FAVORITES_TABLE);
-        sqLiteDatabase.execSQL(SQL_DROP_USERS_TABLE);
         sqLiteDatabase.execSQL(SQL_DROP_TEAMS_TABLE);
         onCreate(sqLiteDatabase);
     }

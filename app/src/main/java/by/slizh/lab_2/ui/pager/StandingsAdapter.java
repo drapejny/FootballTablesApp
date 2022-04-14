@@ -19,9 +19,24 @@ public class StandingsAdapter extends FragmentStateAdapter {
         Fragment fragment = new StandingFragment();
         Bundle args = new Bundle();
         // Our object is just an integer :-P
-        args.putInt(StandingFragment.ARG_OBJECT, position + 1);
+        args.putString(StandingFragment.ARG_OBJECT, getCompetitionCode(position));
         fragment.setArguments(args);
         return fragment;
+    }
+
+    private String getCompetitionCode(int position) {
+        switch (position) {
+            case 0:
+                return "PL";
+            case 1:
+                return "SA";
+            case 2:
+                return "BL1";
+            case 3:
+                return "PD";
+            default:
+                return "PL";
+        }
     }
 
     @Override

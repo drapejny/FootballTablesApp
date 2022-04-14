@@ -1,5 +1,6 @@
 package by.slizh.lab_2.entity;
 
+import java.util.Comparator;
 import java.util.Objects;
 
 public class Team {
@@ -190,5 +191,21 @@ public class Team {
                 ", goalDifference=" + goalDifference +
                 ", position=" + position +
                 '}';
+    }
+
+    public static class TeamPointsComparator implements Comparator<Team> {
+
+        @Override
+        public int compare(Team team1, Team team2) {
+            if (team1.getPoints() > team2.getPoints()) {
+                return 1;
+            } else {
+                if (team1.getPoints() < team2.getPoints()) {
+                    return -1;
+                } else {
+                    return Integer.compare(team1.getGoalDifference(), team2.getGoalDifference());
+                }
+            }
+        }
     }
 }

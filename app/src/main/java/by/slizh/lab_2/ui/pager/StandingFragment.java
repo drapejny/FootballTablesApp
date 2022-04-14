@@ -1,10 +1,23 @@
 package by.slizh.lab_2.ui.pager;
 
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.net.ConnectivityManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -12,45 +25,220 @@ import androidx.fragment.app.Fragment;
 
 import org.json.JSONException;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import by.slizh.lab_2.DetailsActivity;
 import by.slizh.lab_2.R;
 import by.slizh.lab_2.TeamAdapter;
+import by.slizh.lab_2.db.TeamDbHelper;
 import by.slizh.lab_2.entity.Team;
+import by.slizh.lab_2.utils.JsonTeamsLoader;
 import by.slizh.lab_2.utils.JsonTeamsParser;
 
 // Instances of this class are fragments representing a single
 // object in our collection.
 public class StandingFragment extends Fragment {
-    public static final String ARG_OBJECT = "object";
+
+    private static final String URL_STANDINGS_PREFIX = "http://api.football-data.org/v2/competitions/";
+    private static final String URL_STANDINGS_POSTFIX = "/standings";
+
+    public static final String ARG_OBJECT = "code";
+
+    String competitionCode;
+
+    ListView teamsListView;
+
+    TeamDbHelper dbHelper;
+
+    TeamAdapter adapter;
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        System.out.println("Standing create");
         return inflater.inflate(R.layout.fragment_standing, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+
         Bundle args = getArguments();
-        String jsonString = "{\"filters\":{},\"competition\":{\"id\":2002,\"area\":{\"id\":2088,\"name\":\"Germany\"},\"name\":\"Bundesliga\",\"code\":\"BL1\",\"plan\":\"TIER_ONE\",\"lastUpdated\":\"2022-03-20T08:52:53Z\"},\"season\":{\"id\":742,\"startDate\":\"2021-08-13\",\"endDate\":\"2022-05-14\",\"currentMatchday\":29,\"winner\":null},\"standings\":[{\"stage\":\"REGULAR_SEASON\",\"type\":\"TOTAL\",\"group\":null,\"table\":[{\"position\":1,\"team\":{\"id\":5,\"name\":\"FC Bayern München\",\"crestUrl\":\"https://crests.football-data.org/5.svg\"},\"playedGames\":29,\"form\":null,\"won\":21,\"draw\":4,\"lost\":4,\"points\":67,\"goalsFor\":85,\"goalsAgainst\":29,\"goalDifference\":56},{\"position\":2,\"team\":{\"id\":4,\"name\":\"Borussia Dortmund\",\"crestUrl\":\"https://crests.football-data.org/4.png\"},\"playedGames\":29,\"form\":null,\"won\":19,\"draw\":3,\"lost\":7,\"points\":60,\"goalsFor\":70,\"goalsAgainst\":42,\"goalDifference\":28},{\"position\":3,\"team\":{\"id\":3,\"name\":\"Bayer 04 Leverkusen\",\"crestUrl\":\"https://crests.football-data.org/3.png\"},\"playedGames\":28,\"form\":null,\"won\":15,\"draw\":6,\"lost\":7,\"points\":51,\"goalsFor\":68,\"goalsAgainst\":42,\"goalDifference\":26},{\"position\":4,\"team\":{\"id\":721,\"name\":\"RB Leipzig\",\"crestUrl\":\"https://crests.football-data.org/721.png\"},\"playedGames\":28,\"form\":null,\"won\":14,\"draw\":6,\"lost\":8,\"points\":48,\"goalsFor\":61,\"goalsAgainst\":31,\"goalDifference\":30},{\"position\":5,\"team\":{\"id\":17,\"name\":\"SC Freiburg\",\"crestUrl\":\"https://crests.football-data.org/17.svg\"},\"playedGames\":28,\"form\":null,\"won\":12,\"draw\":9,\"lost\":7,\"points\":45,\"goalsFor\":44,\"goalsAgainst\":33,\"goalDifference\":11},{\"position\":6,\"team\":{\"id\":2,\"name\":\"TSG 1899 Hoffenheim\",\"crestUrl\":\"https://crests.football-data.org/2.png\"},\"playedGames\":28,\"form\":null,\"won\":13,\"draw\":5,\"lost\":10,\"points\":44,\"goalsFor\":50,\"goalsAgainst\":42,\"goalDifference\":8},{\"position\":7,\"team\":{\"id\":15,\"name\":\"1. FSV Mainz 05\",\"crestUrl\":\"https://crests.football-data.org/15.svg\"},\"playedGames\":29,\"form\":null,\"won\":12,\"draw\":5,\"lost\":12,\"points\":41,\"goalsFor\":42,\"goalsAgainst\":33,\"goalDifference\":9},{\"position\":8,\"team\":{\"id\":28,\"name\":\"1. FC Union Berlin\",\"crestUrl\":\"https://crests.football-data.org/28.svg\"},\"playedGames\":28,\"form\":null,\"won\":11,\"draw\":8,\"lost\":9,\"points\":41,\"goalsFor\":34,\"goalsAgainst\":38,\"goalDifference\":-4},{\"position\":9,\"team\":{\"id\":1,\"name\":\"1. FC Köln\",\"crestUrl\":\"https://crests.football-data.org/1.png\"},\"playedGames\":29,\"form\":null,\"won\":10,\"draw\":10,\"lost\":9,\"points\":40,\"goalsFor\":38,\"goalsAgainst\":42,\"goalDifference\":-4},{\"position\":10,\"team\":{\"id\":19,\"name\":\"Eintracht Frankfurt\",\"crestUrl\":\"https://crests.football-data.org/19.svg\"},\"playedGames\":28,\"form\":null,\"won\":10,\"draw\":9,\"lost\":9,\"points\":39,\"goalsFor\":39,\"goalsAgainst\":38,\"goalDifference\":1},{\"position\":11,\"team\":{\"id\":18,\"name\":\"Borussia Mönchengladbach\",\"crestUrl\":\"https://crests.football-data.org/18.svg\"},\"playedGames\":29,\"form\":null,\"won\":10,\"draw\":7,\"lost\":12,\"points\":37,\"goalsFor\":41,\"goalsAgainst\":52,\"goalDifference\":-11},{\"position\":12,\"team\":{\"id\":36,\"name\":\"VfL Bochum 1848\",\"crestUrl\":\"https://crests.football-data.org/36.png\"},\"playedGames\":28,\"form\":null,\"won\":10,\"draw\":5,\"lost\":13,\"points\":35,\"goalsFor\":30,\"goalsAgainst\":40,\"goalDifference\":-10},{\"position\":13,\"team\":{\"id\":11,\"name\":\"VfL Wolfsburg\",\"crestUrl\":\"https://crests.football-data.org/11.svg\"},\"playedGames\":29,\"form\":null,\"won\":10,\"draw\":4,\"lost\":15,\"points\":34,\"goalsFor\":31,\"goalsAgainst\":45,\"goalDifference\":-14},{\"position\":14,\"team\":{\"id\":16,\"name\":\"FC Augsburg\",\"crestUrl\":\"https://crests.football-data.org/16.svg\"},\"playedGames\":29,\"form\":null,\"won\":8,\"draw\":9,\"lost\":12,\"points\":33,\"goalsFor\":34,\"goalsAgainst\":45,\"goalDifference\":-11},{\"position\":15,\"team\":{\"id\":10,\"name\":\"VfB Stuttgart\",\"crestUrl\":\"https://crests.football-data.org/10.svg\"},\"playedGames\":29,\"form\":null,\"won\":6,\"draw\":9,\"lost\":14,\"points\":27,\"goalsFor\":36,\"goalsAgainst\":53,\"goalDifference\":-17},{\"position\":16,\"team\":{\"id\":38,\"name\":\"Arminia Bielefeld\",\"crestUrl\":\"https://crests.football-data.org/38.svg\"},\"playedGames\":29,\"form\":null,\"won\":5,\"draw\":11,\"lost\":13,\"points\":26,\"goalsFor\":23,\"goalsAgainst\":41,\"goalDifference\":-18},{\"position\":17,\"team\":{\"id\":9,\"name\":\"Hertha BSC\",\"crestUrl\":\"https://crests.football-data.org/9.svg\"},\"playedGames\":28,\"form\":null,\"won\":7,\"draw\":5,\"lost\":16,\"points\":26,\"goalsFor\":30,\"goalsAgainst\":62,\"goalDifference\":-32},{\"position\":18,\"team\":{\"id\":21,\"name\":\"SpVgg Greuther Fürth 1903\",\"crestUrl\":\"https://crests.football-data.org/21.svg\"},\"playedGames\":29,\"form\":null,\"won\":3,\"draw\":7,\"lost\":19,\"points\":16,\"goalsFor\":24,\"goalsAgainst\":72,\"goalDifference\":-48}]}]}\n";
-        JsonTeamsParser parser = new JsonTeamsParser();
-        List<Team> teams = null;
-        try {
-            teams = parser.parse(jsonString);
-        } catch (JSONException e) {
-            e.printStackTrace();
+
+        competitionCode = args.getString(ARG_OBJECT);
+        teamsListView = (ListView) view.findViewById(R.id.teamsListView);
+        dbHelper = new TeamDbHelper(getContext());
+        initializeCompetition(view, competitionCode);
+        new LoadJsonAsync().execute();
+
+    }
+
+    public void initializeCompetition(View view, String competitionCode) {
+        ImageView imageView = view.findViewById(R.id.competitionLogo);
+        TextView textView = view.findViewById(R.id.competitionName);
+        switch (competitionCode) {
+            case "PL":
+                imageView.setImageResource(R.drawable.pl);
+                textView.setText("Premier League");
+                break;
+            case "SA":
+                imageView.setImageResource(R.drawable.sa);
+                textView.setText("Seria A");
+                break;
+            case "BL1":
+                imageView.setImageResource(R.drawable.bl);
+                textView.setText("Bundeliga");
+                break;
+            case "PD":
+                imageView.setImageResource(R.drawable.pd);
+                textView.setText("La Liga");
+                break;
+        }
+    }
+
+
+    private class LoadJsonAsync extends AsyncTask<Void, Void, List<Team>> {
+
+        @Override
+        protected List<Team> doInBackground(Void... voids) {
+            System.out.println("In background async");
+            List<Team> teams = new ArrayList<>();
+            if (isNetworkConnected()) {
+                String url = URL_STANDINGS_PREFIX + competitionCode + URL_STANDINGS_POSTFIX;
+                try {
+                    String jsonString = JsonTeamsLoader.load(url);
+                    List<Team> loadedTeams = JsonTeamsParser.parse(jsonString);
+                    teams.addAll(loadedTeams);
+                    updateTeamsInDb(teams);
+                } catch (JSONException | IOException e) {
+                    showToast("Can't update data");
+                    teams = loadTeamsByCompetitionCode(competitionCode);
+                }
+            } else {
+                showToast("Can't establish network connection");
+                teams = loadTeamsByCompetitionCode(competitionCode);
+            }
+            System.out.println("Async end");
+            dbHelper.close();
+            return teams;
         }
 
-        System.out.println(teams);
+        @Override
+        protected void onPostExecute(List<Team> result) {
+            adapter = new TeamAdapter(getContext(), R.layout.team_row_item, result);
+            teamsListView.setAdapter(adapter);
 
-        ListView teamsListView = (ListView) view.findViewById(R.id.teamsListView);
+            teamsListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                    Team team = adapter.getItem(i);
+                    Intent intent = new Intent(getContext(), DetailsActivity.class);
+                    intent.putExtra("teamId", team.getTeamId());
+                    intent.putExtra("teamName", team.getTeamName());
+                    intent.putExtra("teamLogo", team.getLogoUrl());
+                    intent.putExtra("position", team.getPosition());
+                    intent.putExtra("points", team.getPoints());
+                    intent.putExtra("playedGames", team.getPlayedGames());
+                    intent.putExtra("won", team.getWon());
+                    intent.putExtra("draw", team.getDraw());
+                    intent.putExtra("lost", team.getLost());
+                    intent.putExtra("goalsFor", team.getGoalsFor());
+                    intent.putExtra("goalsAgainst", team.getGoalsAgainst());
+                    intent.putExtra("goalsDifference", team.getGoalDifference());
 
-        //ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(),android.R.layout.simple_list_item_1,new String[] {"123"});
+                    startActivity(intent);
+                }
+            });
+        }
+    }
 
-        TeamAdapter adapter = new TeamAdapter(getContext(), R.layout.team_row_item, teams);
+    private void updateTeamsInDb(List<Team> teams) {
+        SQLiteDatabase database = dbHelper.getWritableDatabase();
 
-        teamsListView.setAdapter(adapter);
+        for (Team team : teams) {
+            ContentValues values = new ContentValues();
+            values.put(TeamDbHelper.TEAM_ID_KEY, team.getTeamId());
+            values.put(TeamDbHelper.COMPETITION_ID_KEY, team.getCompetitionId());
+            values.put(TeamDbHelper.COMPETITION_NAME_KEY, team.getCompetitionName());
+            values.put(TeamDbHelper.COMPETITION_CODE_KEY, team.getCompetitionCode());
+            values.put(TeamDbHelper.TEAM_NAME_KEY, team.getTeamName());
+            values.put(TeamDbHelper.LOGO_URL_KEY, team.getLogoUrl());
+            values.put(TeamDbHelper.PLAYED_GAMES_KEY, team.getPlayedGames());
+            values.put(TeamDbHelper.WON_KEY, team.getWon());
+            values.put(TeamDbHelper.DRAW_KEY, team.getDraw());
+            values.put(TeamDbHelper.LOST_KEY, team.getLost());
+            values.put(TeamDbHelper.POINTS_KEY, team.getPoints());
+            values.put(TeamDbHelper.GOALS_FOR_KEY, team.getGoalsFor());
+            values.put(TeamDbHelper.GOALS_AGAINST_KEY, team.getGoalsAgainst());
+            values.put(TeamDbHelper.GOAL_DIFFERENCE_KEY, team.getGoalDifference());
+            values.put(TeamDbHelper.POSITION_KEY, team.getPosition());
+
+            int updateCount = database.update(
+                    TeamDbHelper.TEAMS_TABLE_NAME,
+                    values,
+                    TeamDbHelper.TEAM_ID_KEY + " = " + team.getTeamId(),
+                    null
+            );
+            if (updateCount == 0) {
+                database.insert(
+                        TeamDbHelper.TEAMS_TABLE_NAME,
+                        null,
+                        values
+                );
+            }
+        }
+    }
+
+
+    @SuppressLint("Range")
+    private List<Team> loadTeamsByCompetitionCode(String competitionCode) {
+        SQLiteDatabase database = dbHelper.getReadableDatabase();
+        Cursor cursor = database.query(
+                TeamDbHelper.TEAMS_TABLE_NAME,
+                null,
+                TeamDbHelper.COMPETITION_CODE_KEY + " = '" + competitionCode + "'",
+                null, null,
+                null, null
+        );
+
+        List<Team> teams = new ArrayList<>();
+
+        while (cursor.moveToNext()) {
+            teams.add(new Team(
+                    cursor.getInt(cursor.getColumnIndex(TeamDbHelper.TEAM_ID_KEY)),
+                    cursor.getInt(cursor.getColumnIndex(TeamDbHelper.COMPETITION_ID_KEY)),
+                    cursor.getString(cursor.getColumnIndex(TeamDbHelper.COMPETITION_NAME_KEY)),
+                    cursor.getString(cursor.getColumnIndex(TeamDbHelper.COMPETITION_CODE_KEY)),
+                    cursor.getString(cursor.getColumnIndex(TeamDbHelper.TEAM_NAME_KEY)),
+                    cursor.getString(cursor.getColumnIndex(TeamDbHelper.LOGO_URL_KEY)),
+                    cursor.getInt(cursor.getColumnIndex(TeamDbHelper.PLAYED_GAMES_KEY)),
+                    cursor.getInt(cursor.getColumnIndex(TeamDbHelper.WON_KEY)),
+                    cursor.getInt(cursor.getColumnIndex(TeamDbHelper.DRAW_KEY)),
+                    cursor.getInt(cursor.getColumnIndex(TeamDbHelper.LOST_KEY)),
+                    cursor.getInt(cursor.getColumnIndex(TeamDbHelper.POINTS_KEY)),
+                    cursor.getInt(cursor.getColumnIndex(TeamDbHelper.GOALS_FOR_KEY)),
+                    cursor.getInt(cursor.getColumnIndex(TeamDbHelper.GOALS_AGAINST_KEY)),
+                    cursor.getInt(cursor.getColumnIndex(TeamDbHelper.GOAL_DIFFERENCE_KEY)),
+                    cursor.getInt(cursor.getColumnIndex(TeamDbHelper.POSITION_KEY))
+            ));
+        }
+        cursor.close();
+        teams.sort(new Team.TeamPointsComparator().reversed());
+        return teams;
+    }
+
+    private void showToast(String text) {
+        getActivity().runOnUiThread(new Runnable() {
+            public void run() {
+                Toast.makeText(getActivity(), text, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private boolean isNetworkConnected() {
+        ConnectivityManager cm = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        return cm.getActiveNetworkInfo() != null && cm.getActiveNetworkInfo().isConnected();
     }
 }

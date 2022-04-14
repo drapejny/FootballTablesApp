@@ -14,6 +14,7 @@ public final class JsonTeamsLoader {
 
         URL url = new URL(urlString);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestProperty("Content-Type","application/json");
         connection.setRequestProperty("X-Auth-Token", API_TOKEN);
         connection.setRequestMethod("GET");
 

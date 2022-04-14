@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name">Lab_2</string>
+    <string name="title_home">Home</string>
+    <string name="title_explore">Explore</string>
+    <string name="title_profile">Profile</string>
+    <string name="title_sign_out">Sign Out</string>
+    <string name="title_light">Light</string>
+    <string name="title_dark">Dark</string>
+    <string name="title_signed_out">Signed out</string>
+
+    <!--Competitions-->
+    <string name="title_short_pl">PL</string>
+    <string name="title_pl">Premier League</string>
+    <string name="title_short_sa">SA</string>
+    <string name="title_sa">Serie A</string>
+    <string name="title_short_bl">BL1</string>
+    <string name="title_bl">Bundesliga</string>
+    <string name="title_short_pd">PD</string>
+    <string name="title_pd">Primera Division</string>
+    
+    <!--Details-->
+    <string name="title_played_games">Played games</string>
+    <string name="title_won">Won</string>
+    <string name="title_draw">Draw</string>
+    <string name="title_lost">Lost</string>
+    <string name="title_goals_for">Goals For</string>
+    <string name="title_goals_against">Goals Against</string>
+    <string name="title_goals_difference">Goals Difference</string>
+    <string name="title_position">Position</string>
+    <string name="title_points">Points</string>
+    <string name="title_add_to_favorite">Add To Favorite</string>
+    <string name="title_remove_from_favorite">Remove From Favorite</string>
+
+    <!--Explore-->
+    <string name="title_favorites">Favorites</string>
+    <string name="title_searched">Searched</string>
+
+</resources>
